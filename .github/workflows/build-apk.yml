@@ -1,39 +1,41 @@
 name: Build Shah Pharmacy APK
 
 on:
-  workflow_dispatch:
   push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: '17'
+          distribution: 'temurin'
+          java-version: '21'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-      - name: Extract Android Project
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Verify APK Created
         run: |
-          unzip -o Shah_Pharmacy_Android.zip
-          ls -la Shah_Pharmacy_Android
+          test -f app/build/outputs/apk/debug/app-debug.apk
+          echo "APK generated successfully: $(ls -lh app/build/outputs/apk/debug/app-debug.apk)"
 
-      - name: Build APK
-        run: |
-          gradle -p Shah_Pharmacy_Android assembleDebug --stacktrace
-
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Shah-Pharmacy-APK
-          path: Shah_Pharmacy_Android/app/build/outputs/apk/debug/app-debug.apk
+          name: Shah-Pharmacy-Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
